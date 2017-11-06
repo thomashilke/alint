@@ -1,7 +1,7 @@
 
 #include <fstream>
 
-#include "../lexer/lexer.hpp"
+#include <lexer/lexer.hpp>
 #include "token_source.hpp"
 
 enum class symbol {
@@ -18,6 +18,10 @@ enum class symbol {
   literal_string,
   comma, semicolon, indent, eoi
 };
+
+typedef symbol symbol_type;
+typedef token<symbol_type> token_type;
+  
 
 std::ostream& operator<<(std::ostream& stream, symbol s) {
   switch (s) {
@@ -111,11 +115,12 @@ regex_lexer<token<symbol> > build_alint_lexer() {
 }
 
 
+/*
 void parse_alucell_script(token_source<token_type>* t_src) {
   typedef symbol symbol_type;
   typedef token<symbol_type> token_type;
   
-  token_type* current(t_src.get());
+  token_type* current(t_src->get());
 
   switch (current->symbol) {
   case symbol::comment:
@@ -128,24 +133,20 @@ void parse_alucell_script(token_source<token_type>* t_src) {
   case symbol::shell_escape:
   case symbol::for_kw:
   case symbol::defmacro_kw:
-  case symbol::endmacro:
+  case symbol::endmacro_kw:
 
   default:
     throw std::string("Unexpected token");
   }
 }
-
+*/
 
 int main(int argc, char *argv[]) {
   const std::string global_macro_prefix("/usr/scratch/master/alu-data/trunk/macros/");
-  const std::string local_macro_prefix("data/");
-  const std::string inline_macro_prefix("TMP/");
+  const std::string local_macro_prefix("macros/");
+  const std::string inline_macro_prefix("tmp/");
   
   try {
-    typedef symbol symbol_type;
-    typedef token<symbol_type> token_type;
-  
-
     std::ifstream file(argv[1], std::ios::in);
 
     file_source<token_type> ss(&file, argv[1]);
