@@ -1,8 +1,8 @@
-CXX = clang++
+CXX = g++
 DEPS_BIN = g++
-DEPSFLAGS = -std=c++11 -I$(HOME)/.local/include
-CXXFLAGS = -O2 -std=c++11 -I$(HOME)/.local/include
-LDFLAGS = -O2 -L$(HOME)/.local/lib
+DEPSFLAGS =  -I$(HOME)/.local/include
+CXXFLAGS = -O3 -std=c++1y -Wall -Wextra -I$(HOME)/.local/include
+LDFLAGS = -O3 -L$(HOME)/.local/lib
 LDLIB = -llexer
 AR = ar
 ARFLAGS = rc
