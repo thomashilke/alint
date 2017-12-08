@@ -1,6 +1,6 @@
 CXX = g++
 DEPS_BIN = g++
-DEPSFLAGS =  -I$(HOME)/.local/include
+DEPSFLAGS =  -std=c++1y -I$(HOME)/.local/include 
 CXXFLAGS = -O3 -std=c++1y -Wall -Wextra -I$(HOME)/.local/include
 LDFLAGS = -O3 -L$(HOME)/.local/lib
 LDLIB = -llexer

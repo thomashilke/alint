@@ -52,22 +52,22 @@ install-dev: install-header install-lib
 install-all: install-header install-lib install-bin
 
 install-header: $(HEADERS)
-	@echo "[CP]  " $(HEADERS)
 ifneq ($(HEADERS),)
+	@echo "[CP]  " $(HEADERS)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(INCLUDE_DIR)/
 	@cp -r include/* $(PREFIX)/$(INCLUDE_DIR)/
 endif
 
 install-lib: $(LIB)
-	@echo "[CP]  " $(LIB)
 ifneq ($(LIB),)
+	@echo "[CP]  " $(LIB)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(LIB_DIR)/
 	@cp $(LIB) $(PREFIX)/$(LIB_DIR)/
 endif
 
 install-bin: $(BIN)
-	@echo "[CP]  " $(BIN)
 ifneq ($(BIN),)
+	@echo "[CP]  " $(BIN)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(BIN_DIR)/
 	@cp $(BIN) $(PREFIX)/$(BIN_DIR)/
 endif
