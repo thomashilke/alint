@@ -1,6 +1,17 @@
 #ifndef SYNTAX_CHECKERS_H
 #define SYNTAX_CHECKERS_H
 
+/*
+ *  List of possible checks
+ *   - Equal assigment
+ *     rhs should be an expression
+ *   - Equal-dollar assigment
+ *     rhs should be a string literal or an identifier
+ *   - Equal-percent assigment
+ *     rhs should be an identifier
+ */
+
+
 class do_enddo_checker: public basic_visitor {
 public:
   virtual ~do_enddo_checker() {}
@@ -177,7 +188,6 @@ public:
     case symbol::local_macro_name:
       std::cout << l.get_value() << std::endl;
       break;
-
 
     default:
       break;
