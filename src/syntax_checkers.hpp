@@ -80,6 +80,7 @@ private:
 bool check_do_enddo_guards(basic_node* tree) {
   do_enddo_checker checker;
   tree->accept(&checker);
+  return true;
 }
 
 
