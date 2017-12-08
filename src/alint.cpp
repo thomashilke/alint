@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     bool run_checkers(false);
     bool show_dependencies(false);
     bool verbose(false);
+    bool silent(false);
 
     std::vector<std::string> files;
     for (int i(1); i < argc; ++i) {
@@ -44,6 +45,9 @@ int main(int argc, char *argv[]) {
         case 'c':
           run_checkers = true;
           break;
+	case 's':
+	  silent = true;
+	  break;
 	default:
 	  throw std::string("unrecognize option: ") + argv[i];
 	}
@@ -58,9 +62,10 @@ int main(int argc, char *argv[]) {
     if (verbose)
       p.print(std::cout, g);
 
+    alint_token_source tokens;
     for (const auto& file: files) {
       try {
-	alint_token_source tokens(file);
+	tokens.set_file(file);
 
 	if (parsing_pass) {
 	  tree_factory<symbol> factory;
@@ -69,7 +74,9 @@ int main(int argc, char *argv[]) {
 			   tree_factory<symbol>>(p, tokens, factory));
           
 	  if (tree) {
-	    std::cout << file << ": parsing succeed" << std::endl;
+	    if (not silent)
+	      std::cout << file << ": parsing succeed" << std::endl;
+
 	    if (verbose)
 	      tree->show(std::cout);
 
@@ -78,7 +85,7 @@ int main(int argc, char *argv[]) {
 
             if (show_dependencies)
               show_input_and_macro_dependencies(tree);
-            
+
 	    delete tree;
 	    tree = nullptr;
 	  }
@@ -89,7 +96,8 @@ int main(int argc, char *argv[]) {
 			<< tokens.get().value << std::endl;
 	    tokens.next();
 	  }
-	  std::cout << file << ": lexing succeed" << std::endl;
+	  if (not silent)
+	    std::cout << file << ": lexing succeed" << std::endl;
 	} else {
 	  throw std::string("error: no pass to check.");
 	}

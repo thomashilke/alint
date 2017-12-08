@@ -64,8 +64,21 @@ public:
     current = lexer.get();
   }
 
+  alint_token_source()
+    : file(), source(), lexer(build_alint_lexer()), current(nullptr) {
+    lexer.set_source(&source);
+    current = lexer.get();
+  }
+
   ~alint_token_source() {
     delete current;
+  }
+
+  void set_file(const std::string& filename) {
+    file.close();
+    file.open(filename.c_str(), std::ios::in);
+    source.set_file(&file, filename);
+    next();
   }
 
   const token<symbol>& get() const { return *current; }
