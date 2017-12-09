@@ -271,22 +271,22 @@ public:
       break;
 
     case symbol::if_stmt: {
-      if (not is_on_new_line(ws[n.get_children()[2]->get_first_lexem_id()]))
+      if (not is_on_new_line(ws[n.get_children()[2]->get_first_lexem_id() - 1]))
           std::cout << n.get_children()[1]->get_first_lexem_coordinates()
                     << " warning: expression following the THEN keyword is not on a new line" << std::endl;
 
       if (n.get_children().size() == 4) {
-        if (not is_on_new_line(ws[n.get_children()[3]->get_first_lexem_id() + 1]))
+        if (not is_on_new_line(ws[n.get_children()[3]->get_first_lexem_id()]))
           std::cout << n.get_children()[3]->get_first_lexem_coordinates()
                     << " warning: expression following the ENDIF keyword is not on a new line"
                     << std::endl;
       } else if (n.get_children().size() == 6) {
-        if (not is_on_new_line(ws[n.get_children()[4]->get_first_lexem_id()]))
+        if (not is_on_new_line(ws[n.get_children()[4]->get_first_lexem_id() - 1]))
           std::cout << n.get_children()[3]->get_first_lexem_coordinates()
                     << " warning: expression following the ELSE keyword is not on a new line"
                     << std::endl;
 
-        if (not is_on_new_line(ws[n.get_children()[5]->get_first_lexem_id() + 1]))
+        if (not is_on_new_line(ws[n.get_children()[5]->get_first_lexem_id()]))
           std::cout << n.get_children()[5]->get_first_lexem_coordinates()
                     << " warning: expression following the ENDIF keyword is not on a new line"
                     << std::endl;
