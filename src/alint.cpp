@@ -80,8 +80,10 @@ int main(int argc, char *argv[]) {
 	    if (verbose)
 	      tree->show(std::cout);
 
-            if (run_checkers)
+            if (run_checkers) {
               check_do_enddo_guards(tree);
+              check_white_spaces(tree, tokens.get_white_spaces());
+            }
 
             if (show_dependencies)
               show_input_and_macro_dependencies(tree);

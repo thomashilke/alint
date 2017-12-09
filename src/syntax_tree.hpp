@@ -22,6 +22,12 @@ public:
   symbol get_symbol() const {
     return s;
   }
+
+  virtual std::size_t get_first_lexem_id() const = 0;
+  virtual std::size_t get_last_lexem_id() const = 0;
+
+  virtual const std::string& get_first_lexem_coordinates() const = 0;
+  virtual const std::string& get_last_lexem_coordinates() const = 0;
   
 protected:
   symbol s;
@@ -46,6 +52,22 @@ public:
   const std::vector<basic_node*>& get_children() const {
     return children;
   }
+
+  std::size_t get_first_lexem_id() const {
+    return children.front()->get_first_lexem_id();
+  }
+
+  std::size_t get_last_lexem_id() const {
+    return children.back()->get_last_lexem_id();
+  }
+
+  const std::string& get_first_lexem_coordinates() const {
+    return children.front()->get_first_lexem_coordinates();
+  }
+
+  const std::string& get_last_lexem_coordinates() const {
+    return children.back()->get_last_lexem_coordinates();
+  }
   
 private:
   std::vector<basic_node*> children;
@@ -54,10 +76,15 @@ private:
 
 class leaf: public basic_node {
 public:
-  leaf(symbol s, const std::string& v): basic_node(s), value(v) {}
+  leaf(symbol s, const std::string& v,
+       const std::string& coord,
+       std::size_t lexem_id)
+    : basic_node(s), value(v), id(lexem_id), coordinates(coord) {}
 
   void show(std::ostream& stream, unsigned int level) const {
-    stream << std::string(level, ' ') << s <<" (" << value << ")" << std::endl;
+    stream << std::string(level, ' ') << s <<" (" << value << ", "
+           << id << ", "
+           << coordinates << ")" << std::endl;
   }
 
   virtual void accept(basic_visitor* v) {
@@ -67,9 +94,33 @@ public:
   const std::string& get_value() const {
     return value;
   }
+
+  std::size_t get_id() const { return id; }
+
+  std::size_t get_first_lexem_id() const {
+    return get_id();
+  }
+
+  std::size_t get_last_lexem_id() const {
+    return get_id();
+  }
+
+  const std::string& get_lexem_coordinates() const {
+    return coordinates;
+  }
+  
+  const std::string& get_first_lexem_coordinates() const {
+    return coordinates;
+  }
+
+  const std::string& get_last_lexem_coordinates() const {
+    return coordinates;
+  }
   
 private:
   std::string value;
+  std::size_t id;
+  std::string coordinates;
 };
 
 #endif /* SYNTAX_TREE_H */

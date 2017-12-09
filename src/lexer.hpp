@@ -58,35 +58,45 @@ public:
   alint_token_source(const std::string& filename)
     : file(filename.c_str(), std::ios::in),
       source(&file, filename),
-      lexer(build_alint_lexer()),
-      current(nullptr) {
+      lexer(build_alint_lexer()) {
     lexer.set_source(&source);
-    current = lexer.get();
+    next();
   }
 
   alint_token_source()
-    : file(), source(), lexer(build_alint_lexer()), current(nullptr) {
+    : file(), source(), lexer(build_alint_lexer()) {
     lexer.set_source(&source);
-    current = lexer.get();
+    next();
   }
 
   ~alint_token_source() {
-    delete current;
+    for (auto lexem: lexems)
+      delete lexem;
   }
 
   void set_file(const std::string& filename) {
     file.close();
+    for (auto lexem: lexems)
+      delete lexem;
+    white_spaces.clear();
+    lexems.clear();
+    
     file.open(filename.c_str(), std::ios::in);
     source.set_file(&file, filename);
     next();
   }
 
-  const token<symbol>& get() const { return *current; }
-
+  const token<symbol>& get() const { return *lexems.back(); }
+  const std::string& get_skipped_spaces() const { return white_spaces.back(); }
+  std::size_t get_lexem_id() const { return white_spaces.size(); }
+  
   void next() {
-    delete current;
-    current = nullptr;
-    current = lexer.get();
+    lexems.push_back(lexer.get());
+    white_spaces.push_back(lexer.get_skipped_characters());
+  }
+
+  const std::vector<std::string>& get_white_spaces() const {
+    return white_spaces;
   }
   
 private:
@@ -94,7 +104,8 @@ private:
   file_source<token<symbol> > source;
   regex_lexer<token<symbol> > lexer;
 
-  token<symbol>* current;
+  std::vector<token<symbol>* > lexems;
+  std::vector<std::string> white_spaces;
 };
 
 

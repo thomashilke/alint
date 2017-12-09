@@ -138,9 +138,11 @@ public:
 
     return new node(symbol, begin, end);
   }
-  
-  node_type* build_leaf(const token_type& t) {
-    return new leaf(t.symbol, t.value);
+
+  node_type* build_leaf(alint_token_source& src) {
+    return new leaf(src.get().symbol, src.get().value,
+                    src.get().render_coordinates(),
+                    src.get_lexem_id());
   }
 };
 
