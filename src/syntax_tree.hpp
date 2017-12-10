@@ -26,8 +26,8 @@ public:
   virtual std::size_t get_first_lexem_id() const = 0;
   virtual std::size_t get_last_lexem_id() const = 0;
 
-  virtual const std::string& get_first_lexem_coordinates() const = 0;
-  virtual const std::string& get_last_lexem_coordinates() const = 0;
+  virtual const source_coordinate_range* get_first_lexem_coordinates() const = 0;
+  virtual const source_coordinate_range* get_last_lexem_coordinates() const = 0;
   
 protected:
   symbol s;
@@ -61,11 +61,11 @@ public:
     return children.back()->get_last_lexem_id();
   }
 
-  const std::string& get_first_lexem_coordinates() const {
+  const source_coordinate_range* get_first_lexem_coordinates() const {
     return children.front()->get_first_lexem_coordinates();
   }
 
-  const std::string& get_last_lexem_coordinates() const {
+  const source_coordinate_range* get_last_lexem_coordinates() const {
     return children.back()->get_last_lexem_coordinates();
   }
   
@@ -77,14 +77,14 @@ private:
 class leaf: public basic_node {
 public:
   leaf(symbol s, const std::string& v,
-       const std::string& coord,
+       source_coordinate_range* coord,
        std::size_t lexem_id)
     : basic_node(s), value(v), id(lexem_id), coordinates(coord) {}
 
   void show(std::ostream& stream, unsigned int level) const {
     stream << std::string(level, ' ') << s <<" (" << value << ", "
            << id << ", "
-           << coordinates << ")" << std::endl;
+           << coordinates->render() << ")" << std::endl;
   }
 
   virtual void accept(basic_visitor* v) {
@@ -105,22 +105,22 @@ public:
     return get_id();
   }
 
-  const std::string& get_lexem_coordinates() const {
+  const source_coordinate_range* get_lexem_coordinates() const {
     return coordinates;
   }
   
-  const std::string& get_first_lexem_coordinates() const {
+  const source_coordinate_range* get_first_lexem_coordinates() const {
     return coordinates;
   }
 
-  const std::string& get_last_lexem_coordinates() const {
+  const source_coordinate_range* get_last_lexem_coordinates() const {
     return coordinates;
   }
   
 private:
   std::string value;
   std::size_t id;
-  std::string coordinates;
+  source_coordinate_range* coordinates;
 };
 
 #endif /* SYNTAX_TREE_H */

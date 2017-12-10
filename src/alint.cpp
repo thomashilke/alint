@@ -14,6 +14,7 @@
 
 #include "syntax_checkers.hpp"
 
+
 int main(int argc, char *argv[]) {
   try {
     bool lexing_pass(false);

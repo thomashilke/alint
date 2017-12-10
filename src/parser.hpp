@@ -141,7 +141,7 @@ public:
 
   node_type* build_leaf(alint_token_source& src) {
     return new leaf(src.get().symbol, src.get().value,
-                    src.get().render_coordinates(),
+                    src.get().get_coordinates()->copy(),
                     src.get_lexem_id());
   }
 };
