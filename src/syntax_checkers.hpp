@@ -14,6 +14,12 @@
  *     rhs should be a string literal or an identifier
  *   - Equal-percent assigment
  *     rhs should be an identifier
+ *   - Check recursively the macro sources
+ *     go into global and local macros,
+ *     check that inline macros have been previously defined,
+ *   - Check the open and close sequences, and valid dbwrite
+ *   - nested for do enddo guard which share a common prefix
+ *   - nested loop with negative step (how can i check for a negative step?)
  */
 
 void show_coordinates_in_file(const std::string& filename,

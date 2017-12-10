@@ -106,6 +106,25 @@ int main(int argc, char *argv[]) {
 	}
       }
 
+      catch (const parse_error<token<symbol> >& e) {
+        std::cout << e.get_unexpected_token().render_coordinates()
+                  << " error: unexpected " << e.get_unexpected_token().symbol;
+
+        if (e.get_unexpected_token().value.size())
+          std::cout << " (" << e.get_unexpected_token().value << ")";
+
+        if (e.get_expected_symbols().size() == 1)
+          std::cout << " instead of a " << e.get_expected_symbols().front() << ".";
+        else
+          std::cout << ".";
+
+        std::cout << std::endl;
+
+        const file_source_coordinate_range* c(
+          dynamic_cast<const file_source_coordinate_range*>(
+            e.get_unexpected_token().get_coordinates()));
+        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
+      }
       catch (const std::string& e) {
 	std::cout << e << std::endl;
       }
