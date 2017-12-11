@@ -23,6 +23,9 @@ public:
     return s;
   }
 
+  virtual const leaf* get_first_leaf() const = 0;
+  virtual const leaf* get_last_leaf() const = 0;
+  
   virtual std::size_t get_first_lexem_id() const = 0;
   virtual std::size_t get_last_lexem_id() const = 0;
 
@@ -53,6 +56,14 @@ public:
     return children;
   }
 
+  virtual const leaf* get_first_leaf() const {
+    return children.front()->get_first_leaf();
+  }
+  
+  virtual const leaf* get_last_leaf() const {
+    return children.back()->get_last_leaf();
+  }
+  
   std::size_t get_first_lexem_id() const {
     return children.front()->get_first_lexem_id();
   }
@@ -97,6 +108,14 @@ public:
 
   std::size_t get_id() const { return id; }
 
+  virtual const leaf* get_first_leaf() const {
+    return this;
+  }
+  
+  virtual const leaf* get_last_leaf() const {
+    return this;
+  }
+  
   std::size_t get_first_lexem_id() const {
     return get_id();
   }

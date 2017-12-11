@@ -24,7 +24,7 @@ enum class symbol {
    */
   start, stmt, stmt_list, input, macro_call, macro_name, macro_arg_list, macro_arg,
   parent_expression, expression, term, factor, expression_list, parameter_list, function_call,
- if_stmt, for_stmt, macro_file, if_clause, macro_def
+  if_stmt, for_stmt, macro_file, if_clause, macro_def
 };
 
 
