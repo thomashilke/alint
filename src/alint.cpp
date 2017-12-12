@@ -89,6 +89,9 @@ void analyse_file(const std::string& file, options opt, lr_parser<symbol>& p, al
 											    e.get_unexpected_token().get_coordinates()));
     show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
   }
+  catch (const std::string& e) {
+    std::cout << e << std::endl;
+  }
 }
 
 int main(int argc, char *argv[]) {
