@@ -442,6 +442,13 @@ public:
                   << std::endl;
         show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
       }
+
+      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1]) and ws[l.get_id() - 1].empty()) {
+        std::cout << l.get_lexem_coordinates()->render()
+                  << " warning: no space between expression and trailing comment."
+                  << std::endl;
+        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
+      }
     }
       break;
       

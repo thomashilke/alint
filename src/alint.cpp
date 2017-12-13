@@ -1,5 +1,7 @@
 
 #include <fstream>
+#include <set>
+#include <stack>
 
 #include <cstdlib>
 
@@ -17,7 +19,34 @@
 #include "syntax_checkers.hpp"
 
 
-void analyse_file(const std::string& file, options opt, lr_parser<symbol>& p, alint_token_source& tokens) {
+std::set<std::string> get_dependencies(const std::string& file,
+				       options opt,
+				       lr_parser<symbol>& p,
+				       alint_token_source& tokens) {
+  try {
+    tokens.set_file(file);
+    tree_factory<symbol> factory;
+
+    basic_node* tree(parse_input_to_tree<alint_token_source,
+		     tree_factory<symbol>>(p, tokens, factory));
+
+    if (tree)
+      return show_input_and_macro_dependencies(tree, opt);
+  }
+  catch (const parse_error<token<symbol> >& e) {
+    std::cout << file << ": parse failed" << std::endl;
+  }
+  catch (const std::string& e) {
+    std::cout << file << ": parse failed" << std::endl;
+  }
+
+  return std::set<std::string>();
+}
+
+void analyse_file(const std::string& file,
+		  options opt,
+		  lr_parser<symbol>& p,
+		  alint_token_source& tokens) {
   try {
     tokens.set_file(file);
 
@@ -40,12 +69,29 @@ void analyse_file(const std::string& file, options opt, lr_parser<symbol>& p, al
 	}
 
 	if (opt.show_dependencies) {
-	  std::set<std::string> filenames(show_input_and_macro_dependencies(tree, opt));
-	  for (const auto& f: filenames)
-	    std::cout << f << std::endl;
-	}
+	  if (not opt.recursive_parse) {
+	    std::set<std::string> filenames(show_input_and_macro_dependencies(tree, opt));
+	    for (const auto& f: filenames)
+	      std::cout << f << std::endl;
+	  } else {
+	    std::set<std::string> visited;
+	    std::stack<std::string> unvisited;
+	    unvisited.push(file);
+	    while (unvisited.size()) {
+	      const std::string f(unvisited.top());
+	      unvisited.pop();
+	      visited.insert(f);
 
-	if (opt.recursive_parse) {
+	      std::set<std::string> deps(get_dependencies(f, opt, p, tokens));
+	      for (const auto& d: deps)
+		if (visited.count(d) == 0)
+		  unvisited.push(d);
+	    }
+
+	    for (const auto& f: visited)
+	      std::cout << f << std::endl;
+	  }
+	} else if (opt.recursive_parse) {
 	  std::set<std::string> filenames(show_input_and_macro_dependencies(tree, opt));
 	  for (const auto& f: filenames)
 	    analyse_file(f, opt, p, tokens);
