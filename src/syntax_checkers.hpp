@@ -6,6 +6,8 @@
 #include <fstream>
 
 #include "options.hpp"
+#include "file_utils.hpp"
+
 
 /*
  *  List of possible checks
@@ -22,23 +24,6 @@
  *   - nested for do enddo guard which share a common prefix
  *   - nested loop with negative step (how can i check for a negative step?)
  */
-
-void show_coordinates_in_file(const std::string& filename,
-                              std::size_t line_number,
-                              std::size_t column_number) {
-  std::ifstream file(filename.c_str(), std::ios::in);
-  if (not file)
-    throw std::string("could not open ") + filename;
-  
-  std::string line;
-  while (line_number > 0) {
-    std::getline(file, line);
-    --line_number;
-  }
-
-  std::cout << line << std::endl;
-  std::cout << std::string(column_number, ' ') << "^ here" << std::endl;
-}
 
 
 class do_enddo_checker: public basic_visitor {

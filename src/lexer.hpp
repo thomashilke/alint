@@ -1,6 +1,9 @@
 #ifndef ALINT_LEXER_H
 #define ALINT_LEXER_H
 
+#include "file_utils.hpp"
+
+
 typedef token<symbol> token_type;
 
 regex_lexer<token<symbol> > build_alint_lexer() {
@@ -91,8 +94,20 @@ public:
   std::size_t get_lexem_id() const { return white_spaces.size(); }
   
   void next() {
-    lexems.push_back(lexer.get());
-    white_spaces.push_back(lexer.get_skipped_characters());
+    try {
+      lexems.push_back(lexer.get());
+      white_spaces.push_back(lexer.get_skipped_characters());
+    }
+    catch (const lex_error& e) {
+      std::cout << e.get_coordinates()->render() << " error: " << e.get_message() << std::endl;
+      const file_source_coordinate_range* c(
+        dynamic_cast<const file_source_coordinate_range*>(
+          e.get_coordinates()));
+      show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
+      
+      lexer.recover();
+      next();
+    }
   }
 
   const std::vector<std::string>& get_white_spaces() const {

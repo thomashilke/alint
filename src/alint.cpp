@@ -16,18 +16,35 @@
 
 #include "syntax_checkers.hpp"
 
+template<typename token_type>
+struct error_handler: default_error_handler<token_type> {
+public:
+  error_handler() : status(true) {}
+  virtual ~error_handler() {}
+  virtual void operator()(const parse_error<token_type>& e) {
+    status = false;
+    default_error_handler<token_type>::operator()(e);
+  }
 
-void analyse_file(const std::string& file, options opt, lr_parser<symbol>& p, alint_token_source& tokens) {
+  bool status;
+};
+
+void analyse_file(const std::string& file, options opt,
+                  lr_parser<symbol>& p,
+                  cf_grammar<symbol>& g,
+                  alint_token_source& tokens) {
+  using token_type = token<symbol>;
+  
   try {
     tokens.set_file(file);
 
     if (opt.parsing_pass) {
       tree_factory<symbol> factory;
-
+      error_handler<token_type> handler;
       basic_node* tree(parse_input_to_tree<alint_token_source,
-		       tree_factory<symbol>>(p, tokens, factory));
+		       tree_factory<symbol>>(p, g, tokens, factory, handler));
           
-      if (tree) {
+      if (tree and handler.status) {
 	if (not opt.silent)
 	  std::cout << file << ": parsing succeed" << std::endl;
 
@@ -48,7 +65,7 @@ void analyse_file(const std::string& file, options opt, lr_parser<symbol>& p, al
 	if (opt.recursive_parse) {
 	  std::set<std::string> filenames(show_input_and_macro_dependencies(tree, opt));
 	  for (const auto& f: filenames)
-	    analyse_file(f, opt, p, tokens);
+	    analyse_file(f, opt, p, g, tokens);
 	}
 
 	if (opt.reformat_source)
@@ -146,7 +163,7 @@ int main(int argc, char *argv[]) {
 
     alint_token_source tokens;
     for (const auto& file: files) {
-      analyse_file(file, opt, p, tokens);
+      analyse_file(file, opt, p, g, tokens);
     }
   }
   catch (const std::string& e) {
