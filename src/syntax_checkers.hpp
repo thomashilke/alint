@@ -427,6 +427,13 @@ public:
                   << std::endl;
         show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
       }
+
+      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1]) and ws[l.get_id() - 1].empty()) {
+        std::cout << l.get_lexem_coordinates()->render()
+                  << " warning: no space between expression and trailing comment."
+                  << std::endl;
+        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
+      }
     }
       break;
       
@@ -540,8 +547,9 @@ protected:
 class default_ast_printer: public basic_ast_printer {
 public:
   default_ast_printer(std::ostream& stream,
-		      const std::vector<std::string>& ws)
-    : basic_ast_printer(stream, ws) {}
+		      const std::vector<std::string>& ws,
+                      std::size_t indentation)
+    : basic_ast_printer(stream, ws), indentation(indentation) {}
   
   virtual ~default_ast_printer() {}
 
@@ -563,9 +571,22 @@ public:
       
     default:
       basic_ast_printer::stream
-	<< basic_ast_printer::white_spaces[l.get_id() - 1]
+	<< reindent(basic_ast_printer::white_spaces[l.get_id() - 1])
 	<< l.get_value();
       break;
+    }
+  }
+
+private:
+  std::size_t indentation;
+
+  std::string reindent(std::string ws) {
+    std::string::size_type nl_position(ws.rfind('\n'));
+    if (nl_position == std::string::npos) {
+      return ws;
+    } else {
+      return ws.replace(nl_position + 1, ws.size() - nl_position - 2,
+                        std::string(indentation, ' '));
     }
   }
 };
@@ -574,8 +595,8 @@ class reformat_printer: public basic_visitor {
 public:
   reformat_printer(std::ostream& stream,
 		   const std::vector<std::string>& white_spaces)
-    : stream(stream), white_spaces(white_spaces) {
-    printers.push_back(new default_ast_printer(stream, white_spaces));
+    : stream(stream), white_spaces(white_spaces), indentation(0) {
+    printers.push_back(new default_ast_printer(stream, white_spaces, indentation));
   }
   
   virtual ~reformat_printer() {}
@@ -597,20 +618,87 @@ public:
     case symbol::expression_list:
     case symbol::parameter_list:
     case symbol::function_call:
-    case symbol::if_stmt:
-    case symbol::for_stmt:
     case symbol::macro_file:
     case symbol::if_clause:
+      for (auto child: n.get_children())
+        child->accept(this);
+      break;
+
     case symbol::macro_def:
+      for (std::size_t i(0); i < 2; ++i)
+        n.get_children()[i]->accept(this);
+
+      indent();
+
+      for (std::size_t i(2); i < 4; ++i)
+        n.get_children()[i]->accept(this);
+
+      deindent();
+
+      for (std::size_t i(4); i < 6; ++i)
+        n.get_children()[i]->accept(this);
+      break;
+
+    case symbol::if_stmt:
+      for (std::size_t i(0); i < 2; ++i)
+        n.get_children()[i]->accept(this);
+
+      indent();
+
+      if (n.get_children().size() == 4) {
+        n.get_children()[2]->accept(this);
+
+        deindent();
+
+        n.get_children()[3]->accept(this);
+      } else {
+        n.get_children()[2]->accept(this);
+
+        deindent();
+
+        n.get_children()[3]->accept(this);
+
+        indent();
+
+        n.get_children()[4]->accept(this);
+
+        deindent();
+
+        n.get_children()[5]->accept(this);
+      }
+      break;
+
+    case symbol::for_stmt:
+      if (n.get_children().size() == 9) {
+        for (std::size_t i(0); i < 7; ++i)
+          n.get_children()[i]->accept(this);
+
+        indent();
+
+        n.get_children()[7]->accept(this);
+
+        deindent();
+
+        n.get_children()[8]->accept(this);
+      } else {
+        for (std::size_t i(0); i < 9; ++i)
+          n.get_children()[i]->accept(this);
+
+        indent();
+
+        n.get_children()[9]->accept(this);
+
+        deindent();
+
+        n.get_children()[10]->accept(this);
+      }
+
       break;
 
     default:
       throw std::string("this should not happen: unhandled non terminal symbol");
       break;
     }
-
-    for (auto child: n.get_children())
-      child->accept(this);
   }
 
   virtual void visit(leaf& l) override {
@@ -663,6 +751,18 @@ private:
   std::ostream& stream;
   const std::vector<std::string>& white_spaces;
   std::vector<basic_ast_printer*> printers;
+  std::size_t indentation;
+
+  void indent() {
+    indentation += 2;
+    printers.push_back(new default_ast_printer(stream, white_spaces, indentation));
+  }
+
+  void deindent() {
+    delete printers.back();
+    printers.pop_back();
+    indentation -= 2;
+  }
 };
 
 void reformat(basic_node* tree,
