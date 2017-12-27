@@ -60,7 +60,7 @@ std::set<std::string> get_dependencies(const std::string& file,
 		     tree_factory<symbol>,
                      silent_error_handler<token_type>>(p, g, tokens, factory, handler));
 
-    if (tree and handler.status)
+    if (tree)
       return show_input_and_macro_dependencies(tree, opt);
   }
   catch (const parse_error<token<symbol> >& e) {
@@ -89,7 +89,7 @@ void analyse_file(const std::string& file, options opt,
       basic_node* tree(parse_input_to_tree<alint_token_source,
 		       tree_factory<symbol>>(p, g, tokens, factory, handler));
           
-      if (tree and handler.status) {
+      if (tree) {
 	if (not opt.silent)
 	  std::cout << file << ": parsing succeed" << std::endl;
 

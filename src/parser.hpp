@@ -133,10 +133,10 @@ public:
   
   node_type* build_node(std::list<node_type*>::iterator begin,
                         std::list<node_type*>::iterator end,
-                        unsigned int /* rule_id */,
+                        int rule_id,
                         symbol_type symbol) {
 
-    return new node(symbol, begin, end);
+    return new node(symbol, rule_id, begin, end);
   }
 
   node_type* build_leaf(alint_token_source& src) {

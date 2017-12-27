@@ -40,10 +40,16 @@ protected:
 class node: public basic_node {
 public:
   template<typename iterator_type>
-  node(symbol s, iterator_type begin, iterator_type end): basic_node(s), children(begin, end) {}
+  node(symbol s, int production_id,
+       iterator_type begin, iterator_type end): basic_node(s), production_id(production_id), children(begin, end) {}
 
   void show(std::ostream& stream, unsigned int level) const {
-    stream << std::string(level, ' ') << s << std::endl;
+    stream << std::string(level, ' ') << s;
+    if (production_id == -1)
+      stream << "[recovered from error]" << std::endl;
+    else
+      stream << std::endl;
+    
     for (const auto& c: children)
       c->show(stream, level + 2);
   }
@@ -51,6 +57,8 @@ public:
   virtual void accept(basic_visitor* v) {
     v->visit(*this);
   }
+
+  int get_production_id() const { return production_id; }
 
   const std::vector<basic_node*>& get_children() const {
     return children;
@@ -81,6 +89,7 @@ public:
   }
   
 private:
+  int production_id;
   std::vector<basic_node*> children;
 };
 

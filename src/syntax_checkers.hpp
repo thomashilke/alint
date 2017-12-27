@@ -33,6 +33,9 @@ public:
   virtual ~do_enddo_checker() {}
   
   virtual void visit(node& n) override {
+    if (n.get_production_id() == -1)
+      return;
+    
     switch (n.get_symbol()) {
     case symbol::start:
     case symbol::macro_file:
@@ -124,6 +127,9 @@ bool check_do_enddo_guards(basic_node* tree) {
 class input_filename: public basic_visitor {
 public:
   virtual void visit(node& n) {
+    if (n.get_production_id() == -1)
+      return;
+    
     if (n.get_symbol() != symbol::input)
       throw std::string("not an input symbol node");
     n.get_children()[1]->accept(this);
@@ -163,6 +169,9 @@ public:
   virtual ~dependency_extractor() {}
   
   virtual void visit(node& n) override {
+    if (n.get_production_id() == -1)
+      return;
+    
     switch (n.get_symbol()) {
     case symbol::start:
     case symbol::macro_file:
@@ -250,6 +259,9 @@ public:
   
   white_spaces_checker(const std::vector<std::string>& ws): ws(ws) {}
   virtual void visit(node& n) override {
+    if (n.get_production_id() == -1)
+      return;
+    
     switch (n.get_symbol()) {
     case symbol::start:
     case symbol::macro_file:
@@ -602,6 +614,9 @@ public:
   virtual ~reformat_printer() {}
 
   virtual void visit(node& n) override {
+    if (n.get_production_id() == -1)
+      return;
+    
     switch (n.get_symbol()) {
     case symbol::start:
     case symbol::stmt_list:
