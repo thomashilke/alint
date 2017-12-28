@@ -60,10 +60,10 @@ std::ostream& operator<<(std::ostream& stream, symbol s) {
   case symbol::div: stream << "div"; break;
   case symbol::equal: stream << "equal"; break;
   case symbol::percent: stream << "percent"; break;
-  case symbol::lp: stream << "lp"; break;
-  case symbol::rp: stream << "rp"; break;
-  case symbol::lb: stream << "lb"; break;
-  case symbol::rb: stream << "rb"; break;
+  case symbol::lp: stream << "left-parent"; break;
+  case symbol::rp: stream << "right-parent"; break;
+  case symbol::lb: stream << "left-curly-bracket"; break;
+  case symbol::rb: stream << "right-curly-bracket"; break;
   case symbol::literal_string:  stream << "literal_string"; break;
   case symbol::comma: stream << "comma"; break;
   case symbol::semicolon: stream << "semicolon"; break;

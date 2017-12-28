@@ -20,13 +20,24 @@
 
 
 template<typename token_type>
-struct error_handler: default_error_handler<token_type> {
+struct error_handler: public default_error_handler<token_type> {
 public:
   error_handler() : status(true) {}
   virtual ~error_handler() {}
-  virtual void operator()(const parse_error<token_type>& e) {
+
+  virtual void operator()(const token_type& t) {
+    default_error_handler<token_type>::operator()(t);
     status = false;
-    default_error_handler<token_type>::operator()(e);
+
+    const file_source_coordinate_range* c(
+      dynamic_cast<const file_source_coordinate_range*>(
+        t.get_coordinates()));
+    
+    show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
+  }
+  
+  virtual void operator()(const parse_error<token_type>& e) {
+    this->operator()(e.get_unexpected_token());
   }
 
   bool status;
@@ -34,10 +45,11 @@ public:
 
 
 template<typename token_type>
-struct silent_error_handler: default_error_handler<token_type> {
+struct silent_error_handler: public default_error_handler<token_type> {
 public:
   silent_error_handler() : status(true) {}
   virtual ~silent_error_handler() {}
+  
   virtual void operator()(const parse_error<token_type>&) {
     status = false;
   }
@@ -58,7 +70,7 @@ std::set<std::string> get_dependencies(const std::string& file,
     silent_error_handler<token_type> handler;
     basic_node* tree(parse_input_to_tree<alint_token_source,
 		     tree_factory<symbol>,
-                     silent_error_handler<token_type>>(p, g, tokens, factory, handler));
+                     default_error_handler<token_type>>(p, g, tokens, factory, handler));
 
     if (tree)
       return show_input_and_macro_dependencies(tree, opt);
@@ -87,7 +99,8 @@ void analyse_file(const std::string& file, options opt,
       tree_factory<symbol> factory;
       error_handler<token_type> handler;
       basic_node* tree(parse_input_to_tree<alint_token_source,
-		       tree_factory<symbol>>(p, g, tokens, factory, handler));
+		       tree_factory<symbol>,
+                       default_error_handler<token_type>>(p, g, tokens, factory, handler));
           
       if (tree) {
 	if (not opt.silent)
