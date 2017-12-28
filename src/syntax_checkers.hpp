@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <fstream>
 
+#include <spikes/string_builder.hpp>
+
 #include "options.hpp"
 #include "file_utils.hpp"
 
@@ -24,6 +26,22 @@
  *   - nested for do enddo guard which share a common prefix
  *   - nested loop with negative step (how can i check for a negative step?)
  */
+
+
+void print_warning(const source_coordinate_range* coord, const std::string& msg) {
+  using coord_t = file_source_coordinate_range;
+
+  const coord_t* c(dynamic_cast<const coord_t*>(coord));
+
+  std::cout << c->render() << " ";
+  if (isatty(1))
+    std::cout << ansi::bold << ansi::color(208) << "warning" << ansi::normal;
+  else
+    std::cout << "warning";
+
+  std::cout << ": " << msg << std::endl;
+  show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
+}
 
 
 class do_enddo_checker: public basic_visitor {
@@ -60,7 +78,7 @@ public:
       n.get_children()[5]->accept(this); // symbol::inline_macro_name
       n.get_children()[2]->accept(this); // symbol::stmt_list
       break;
-      
+
 
     case symbol::if_stmt:
       n.get_children()[2]->accept(this);
@@ -73,7 +91,7 @@ public:
       if (n.get_children().size() == 2)
         n.get_children()[1]->accept(this);
       break;
-      
+
     default:
       break;
     }
@@ -83,29 +101,20 @@ public:
     if (l.get_symbol() == symbol::do_kw) {
       do_guard_value = l.get_value().substr(4, l.get_value().size() - 4 - 2);
     } else if (l.get_symbol() == symbol::enddo_kw) {
-      std::string enddo_guard_value(l.get_value().substr(7, l.get_value().size() - 7 - 2));
-      if (enddo_guard_value != do_guard_value) {
-        const coord_t* c(dynamic_cast<const coord_t*>(l.get_lexem_coordinates()));
-        std::cout << l.get_lexem_coordinates()->render()
-                  << " warning: DO \"" << do_guard_value
-                  << "\" doesn't match ENDDO \""
-                  << enddo_guard_value << "\" guard value"
-                  << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());        
-      }
+      const std::string enddo_guard_value(l.get_value().substr(7, l.get_value().size() - 7 - 2));
+      if (enddo_guard_value != do_guard_value)
+        print_warning(l.get_lexem_coordinates(),
+                      string_builder("DO \"")(do_guard_value)("\" doesn't match ENDDO \"")
+                                    (enddo_guard_value)("\" guard value.").str());
+
     } else if (l.get_symbol() == symbol::inline_macro_name) {
       if (inline_macro_name.empty()) {
         inline_macro_name.push_back(l.get_value());
       } else {
-        if (inline_macro_name.back() != l.get_value()) {
-          const coord_t* c(dynamic_cast<const coord_t*>(l.get_lexem_coordinates()));
-          std::cout << l.get_lexem_coordinates()->render()
-                    << " warning: MACRO \"" << inline_macro_name.back()
-                    << "\" don't match ENDMACRO \""
-                    << l.get_value() << "\" guard value."
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+        if (inline_macro_name.back() != l.get_value())
+          print_warning(l.get_lexem_coordinates(),
+                        string_builder("MACRO \"")(inline_macro_name.back())("\" don't match ENDMACRO \"")
+                                      (l.get_value())("\" guard value.").str());
         inline_macro_name.clear();
       }
     }
@@ -129,9 +138,9 @@ public:
   virtual void visit(node& n) {
     if (n.get_production_id() == -1)
       return;
-    
+
     if (n.get_symbol() != symbol::input)
-      throw std::string("not an input symbol node");
+      throw std::string("not an input symbol node.");
     n.get_children()[1]->accept(this);
   }
   virtual void visit(leaf& l) {
@@ -139,19 +148,19 @@ public:
     case symbol::identifier:
       return_value = l.get_value();
       break;
-        
+
     case symbol::literal_string:
       return_value = l.get_value().substr(1, l.get_value().size() - 2);
       break;
-      
+
     default:
-      throw std::string("unexpected symbol in an input node production");
+      throw std::string("unexpected symbol in an input node production.");
     }
   }
 
   std::string return_value;
 };
-  
+
 
 std::string get_input_filename(basic_node* tree) {
   input_filename i_f;
@@ -165,13 +174,13 @@ public:
   dependency_extractor(const options& opt):
     global_macro_dir(opt.global_macro_dir),
     local_macro_dir(opt.local_macro_dir) {}
-    
+
   virtual ~dependency_extractor() {}
-  
+
   virtual void visit(node& n) override {
     if (n.get_production_id() == -1)
       return;
-    
+
     switch (n.get_symbol()) {
     case symbol::start:
     case symbol::macro_file:
@@ -184,7 +193,8 @@ public:
       if (n.get_children().size() == 2)
         n.get_children()[1]->accept(this);
       break;
-      
+
+
     case symbol::for_stmt:
       if (n.get_children().size() == 9) {
         n.get_children()[7]->accept(this); // symbol::stmt_list
@@ -239,7 +249,7 @@ public:
   const std::set<std::string>& get_filenames() const { return filenames; }
 
   void clear() { filenames.clear(); }
-  
+
 private:
   std::string global_macro_dir;
   std::string local_macro_dir;
@@ -256,12 +266,12 @@ std::set<std::string> show_input_and_macro_dependencies(basic_node* tree, const 
 class white_spaces_checker: public basic_visitor {
 public:
   using coord_t = file_source_coordinate_range;
-  
+
   white_spaces_checker(const std::vector<std::string>& ws): ws(ws) {}
   virtual void visit(node& n) override {
     if (n.get_production_id() == -1)
       return;
-    
+
     switch (n.get_symbol()) {
     case symbol::start:
     case symbol::macro_file:
@@ -274,95 +284,68 @@ public:
       if (n.get_children().size() == 2)
         n.get_children()[1]->accept(this);
       break;
-      
+
     case symbol::for_stmt:
       if (n.get_children().size() == 9) {
          // initial condition
         if (not check_white_spaces_in_range(n.get_children()[1]->get_first_lexem_id(),
-                                            n.get_children()[3]->get_last_lexem_id())) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[1]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[1]->get_first_lexem_coordinates()->render()
-                    << " warning: white spaces in the initialisation of the for statement."
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+                                            n.get_children()[3]->get_last_lexem_id()))
+          print_warning(n.get_children()[1]->get_first_lexem_coordinates(),
+                        string_builder("white spaces in the initialisation of the for statement.").str());
 
          // upper boundary
         if (not check_white_spaces_in_range(n.get_children()[5]->get_first_lexem_id(),
-                                            n.get_children()[5]->get_last_lexem_id())) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[5]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[5]->get_first_lexem_coordinates()->render()
-                    << " warning: white spaces in the stop condition of the for statement."
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+                                            n.get_children()[5]->get_last_lexem_id()))
+          print_warning(n.get_children()[5]->get_first_lexem_coordinates(),
+                        string_builder("white spaces in the stop condition of the for statement.").str());
+
 
 	// do
 	if (not is_on_new_line(ws[n.get_children()[7]->get_first_lexem_id() - 1])
-	    and n.get_children()[7]->get_first_leaf()->get_symbol() != symbol::comment) {
-	  const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[7]->get_first_lexem_coordinates()));
-	  std::cout << n.get_children()[7]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the DO keyword is not on a new line" << std::endl;
-	  show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-	}
+	    and n.get_children()[7]->get_first_leaf()->get_symbol() != symbol::comment)
+          print_warning(n.get_children()[7]->get_first_lexem_coordinates(),
+                        string_builder("expression following the DO keyword is not on a new line.").str());
 
 	// enddo
-	if (not is_on_new_line(ws[n.get_children()[8]->get_first_lexem_id()])) {
-	  const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[8]->get_first_lexem_coordinates()));
-	  std::cout << n.get_children()[8]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the ENDDO keyword is not on a new line" << std::endl;
-	  show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-	}
-        
+	if (not is_on_new_line(ws[n.get_children()[8]->get_first_lexem_id()]))
+          print_warning(n.get_children()[8]->get_first_lexem_coordinates(),
+                        string_builder("expression following the ENDDO keyword is not on a new line.").str());
+
         n.get_children()[7]->accept(this); // symbol::stmt_list
       } else {
         // initial condition
         if (not check_white_spaces_in_range(n.get_children()[1]->get_first_lexem_id(),
-                                            n.get_children()[3]->get_last_lexem_id())) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[1]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[1]->get_first_lexem_coordinates()->render()
-                    << " warning: white spaces in the initialisation of the for statement."
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
-        
+                                            n.get_children()[3]->get_last_lexem_id()))
+          print_warning(n.get_children()[1]->get_first_lexem_coordinates(),
+                        string_builder("white spaces in the initialisation of the for statement.").str());
+
+
          // upper boundary
         if (not check_white_spaces_in_range(n.get_children()[5]->get_first_lexem_id(),
-                                            n.get_children()[5]->get_last_lexem_id())) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[5]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[5]->get_first_lexem_coordinates()->render()
-                    << " warning: white spaces in the stop condition of the for statement."
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+                                            n.get_children()[5]->get_last_lexem_id()))
+          print_warning(n.get_children()[5]->get_first_lexem_coordinates(),
+                        string_builder("white spaces in the stop condition of the for statement.").str());
+
 
          // step
         if (not check_white_spaces_in_range(n.get_children()[7]->get_first_lexem_id(),
-                                            n.get_children()[7]->get_last_lexem_id())) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[7]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[7]->get_first_lexem_coordinates()->render()
-                    << " warning: white spaces in the step condition of the for statement."
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+                                            n.get_children()[7]->get_last_lexem_id()))
+          print_warning(n.get_children()[7]->get_first_lexem_coordinates(),
+                        string_builder("white spaces in the step condition of the for statement.").str());
 
 	// do
 	if (not is_on_new_line(ws[n.get_children()[8]->get_first_lexem_id()])
-	    and n.get_children()[9]->get_first_leaf()->get_symbol() != symbol::comment) {
-	  const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[9]->get_first_lexem_coordinates()));
-	  std::cout << n.get_children()[9]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the DO keyword is not on a new line" << std::endl;
-	  show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-	}
+	    and n.get_children()[9]->get_first_leaf()->get_symbol() != symbol::comment)
+          print_warning(n.get_children()[9]->get_first_lexem_coordinates(),
+                        string_builder("expression following the DO keyword is not on a new line.").str());
+
 
 	// enddo
-	if (not is_on_new_line(ws[n.get_children()[10]->get_first_lexem_id()])) {
-	  const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[10]->get_first_lexem_coordinates()));
-	  std::cout << n.get_children()[10]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the ENDDO keyword is not on a new line" << std::endl;
-	  show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-	}
-	
+	if (not is_on_new_line(ws[n.get_children()[10]->get_first_lexem_id()]))
+          print_warning(n.get_children()[10]->get_first_lexem_coordinates(),
+                        string_builder("expression following the ENDDO keyword is not on a new line.").str());
+
+
         n.get_children()[9]->accept(this);
       }
       break;
@@ -373,40 +356,27 @@ public:
 
     case symbol::if_stmt: {
       if (not is_on_new_line(ws[n.get_children()[2]->get_first_lexem_id() - 1])
-	  and n.get_children()[2]->get_first_leaf()->get_symbol() != symbol::comment) {
-        const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[2]->get_first_lexem_coordinates()));
-        std::cout << n.get_children()[1]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the THEN keyword is not on a new line" << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-      }
+	  and n.get_children()[2]->get_first_leaf()->get_symbol() != symbol::comment)
+        print_warning(n.get_children()[2]->get_first_lexem_coordinates(),
+                        string_builder("expression following the THEN keyword is not on a new line.").str());
 
       if (n.get_children().size() == 4) {
-        if (not is_on_new_line(ws[n.get_children()[3]->get_first_lexem_id()])) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[3]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[3]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the ENDIF keyword is not on a new line"
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+        if (not is_on_new_line(ws[n.get_children()[3]->get_first_lexem_id()]))
+          print_warning(n.get_children()[3]->get_first_lexem_coordinates(),
+                        string_builder("expression following the ENDIF keyword is not on a new line.").str());
+
       } else if (n.get_children().size() == 6) {
         if (not is_on_new_line(ws[n.get_children()[4]->get_first_lexem_id() - 1])
-	    and n.get_children()[4]->get_first_leaf()->get_symbol() != symbol::comment) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[4]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[4]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the ELSE keyword is not on a new line"
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+	    and n.get_children()[4]->get_first_leaf()->get_symbol() != symbol::comment)
+          print_warning(n.get_children()[4]->get_first_lexem_coordinates(),
+                        string_builder("expression following the ELSE keyword is not on a new line.").str());
 
-        if (not is_on_new_line(ws[n.get_children()[5]->get_first_lexem_id()])) {
-          const coord_t* c(dynamic_cast<const coord_t*>(n.get_children()[5]->get_first_lexem_coordinates()));
-          std::cout << n.get_children()[5]->get_first_lexem_coordinates()->render()
-                    << " warning: expression following the ENDIF keyword is not on a new line"
-                    << std::endl;
-          show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-        }
+        if (not is_on_new_line(ws[n.get_children()[5]->get_first_lexem_id()]))
+          print_warning(n.get_children()[5]->get_first_lexem_coordinates(),
+                        string_builder("expression following the ENDIF keyword is not on a new line.").str());
+
       }
-      
+
       n.get_children()[2]->accept(this);
       if (n.get_children().size() == 6)
         n.get_children()[4]->accept(this);
@@ -430,60 +400,43 @@ public:
   virtual void visit(leaf& l) override {
     switch (l.get_symbol()) {
     case symbol::comment: {
-      const coord_t* c(dynamic_cast<const coord_t*>(l.get_lexem_coordinates()));
       if (   (l.get_id() == 1 and     is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1]))
           or (l.get_id() == 1 and not is_on_new_line(ws[l.get_id() - 1]) and not ws[l.get_id() - 1].empty())
-          or (l.get_id() > 1 and is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1]))) {
-        std::cout << l.get_lexem_coordinates()->render()
-                  << " warning: comment is indented."
-                  << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-      }
+          or (l.get_id() > 1 and is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1])))
+        print_warning(l.get_first_lexem_coordinates(),
+                        string_builder("comment is indented.").str());
 
-      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1]) and ws[l.get_id() - 1].empty()) {
-        std::cout << l.get_lexem_coordinates()->render()
-                  << " warning: no space between expression and trailing comment."
-                  << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-      }
+      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1]) and ws[l.get_id() - 1].empty())
+        print_warning(l.get_lexem_coordinates(),
+                        string_builder("no space between expression and trailing comment.").str());
     }
       break;
-      
+
     case symbol::visual_comment: {
-      const coord_t* c(dynamic_cast<const coord_t*>(l.get_lexem_coordinates()));
-      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1])) {
-        std::cout << l.get_lexem_coordinates()->render()
-                  << " warning: visual comment is not on a new line."
-                  << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-      }
+
+      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1]))
+        print_warning(l.get_lexem_coordinates(),
+                        string_builder("visual comment is not on a new line.").str());
+
       if (   (l.get_id() == 1 and     is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1]))
           or (l.get_id() == 1 and not is_on_new_line(ws[l.get_id() - 1]) and not ws[l.get_id() - 1].empty())
-          or (l.get_id() > 1 and is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1]))) {
-        std::cout << l.get_lexem_coordinates()->render()
-                  << " warning: visual comment is indented."
-                  << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-      }
+          or (l.get_id() > 1 and is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1])))
+        print_warning(l.get_first_lexem_coordinates(),
+                        string_builder("visual comment is indented.").str());
+
     }
       break;
     case symbol::shell_escape: {
-      const coord_t* c(dynamic_cast<const coord_t*>(l.get_lexem_coordinates()));
-	
-      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1])) {
-	std::cout << l.get_lexem_coordinates()->render()
-                  << "warning: shell escape is not on a new line."
-                  << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-      }
+
+      if (l.get_id() > 1 and not is_on_new_line(ws[l.get_id() - 1]))
+        print_warning(l.get_first_lexem_coordinates(),
+                        string_builder("shell escape is not on a new line.").str());
+
       if (   (l.get_id() == 1 and     is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1]))
           or (l.get_id() == 1 and not is_on_new_line(ws[l.get_id() - 1]) and not ws[l.get_id() - 1].empty())
-	  or (l.get_id() > 1 and is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1]))) {
-        std::cout << l.get_lexem_coordinates()->render()
-                  << " warning: shell escape is indented."
-                  << std::endl;
-        show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-      }
+	  or (l.get_id() > 1 and is_on_new_line(ws[l.get_id() - 1]) and is_indented(ws[l.get_id() - 1])))
+        print_warning(l.get_first_lexem_coordinates(),
+                        string_builder("shell escape is indented.").str());
     }
       break;
 
@@ -509,21 +462,15 @@ private:
       open_parent_id(n.get_first_lexem_id()),
       close_parent_id(n.get_last_lexem_id());
 
-    if(not ws[open_parent_id].empty()) {
-      const coord_t* c(dynamic_cast<const coord_t*>(n.get_first_lexem_coordinates()));
-      std::cout << c->render()
-                << " warning: opening parenthese is followed by white space."
-                << std::endl;
-      show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-    }
+    if(not ws[open_parent_id].empty())
+      print_warning(n.get_first_lexem_coordinates(),
+                        string_builder("opening parenthese is followed by white space.").str());
 
-    if(not ws[close_parent_id - 1].empty()) {
-      const coord_t* c(dynamic_cast<const coord_t*>(n.get_last_lexem_coordinates()));
-      std::cout << c->render()
-                << " warning: closing parenthese is preceded by white space."
-                << std::endl;
-      show_coordinates_in_file(c->get_filename(), c->get_line(), c->get_column());
-    }
+
+    if(not ws[close_parent_id - 1].empty())
+      print_warning(n.get_last_lexem_coordinates(),
+                        string_builder("closing parenthese is preceded by white space.").str());
+
   }
 
   bool check_white_spaces_in_range(std::size_t first, std::size_t last) const {
@@ -546,11 +493,11 @@ public:
   basic_ast_printer(std::ostream& stream,
 		    const std::vector<std::string>& ws)
     : stream(stream), white_spaces(ws) {}
-  
+
   virtual ~basic_ast_printer() {}
 
   virtual void print(leaf& l) = 0;
-  
+
 protected:
   std::ostream& stream;
   const std::vector<std::string>& white_spaces;
@@ -562,7 +509,7 @@ public:
 		      const std::vector<std::string>& ws,
                       std::size_t indentation)
     : basic_ast_printer(stream, ws), indentation(indentation) {}
-  
+
   virtual ~default_ast_printer() {}
 
   virtual void print(leaf& l) {
@@ -573,14 +520,14 @@ public:
       const std::size_t lexem_id(l.get_id()-1);
       const std::size_t newlines(std::count(this->white_spaces[lexem_id].begin(),
 					    this->white_spaces[lexem_id].end(),'\n'));
-      
+
       basic_ast_printer::stream
 	<< std::string(newlines > 1 ? newlines : 1, '\n')
 	<< l.get_value();
     }
       break;
-      
-      
+
+
     default:
       basic_ast_printer::stream
 	<< reindent(basic_ast_printer::white_spaces[l.get_id() - 1])
@@ -610,13 +557,13 @@ public:
     : stream(stream), white_spaces(white_spaces), indentation(0) {
     printers.push_back(new default_ast_printer(stream, white_spaces, indentation));
   }
-  
+
   virtual ~reformat_printer() {}
 
   virtual void visit(node& n) override {
     if (n.get_production_id() == -1)
       return;
-    
+
     switch (n.get_symbol()) {
     case symbol::start:
     case symbol::stmt_list:
@@ -755,7 +702,7 @@ public:
     case symbol::comma:
       printers.back()->print(l);
       break;
-      
+
     default:
       throw std::string("this should not happen: unhandled terminal symbol");
       break;

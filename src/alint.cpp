@@ -5,7 +5,11 @@
 
 #include <cstdlib>
 
+#include <unistd.h>
+
+
 #include <spikes/timer.hpp>
+#include <spikes/ansi_iomanip.hpp>
 
 #include <parser/parser.hpp>
 #include <lexer/lexer.hpp>
@@ -26,7 +30,16 @@ public:
   virtual ~error_handler() {}
 
   virtual void operator()(const token_type& t) {
-    default_error_handler<token_type>::operator()(t);
+    std::cout << t.render_coordinates()
+              << " ";
+    if (isatty(1))
+      std::cout << ansi::bold << ansi::color(160) << "error" << ansi::normal;
+    else
+      std::cout << "error";
+
+    std::cout << ": unexpected " << t.symbol
+              << "." << std::endl;
+
     status = false;
 
     const file_source_coordinate_range* c(
