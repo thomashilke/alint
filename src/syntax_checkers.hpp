@@ -735,4 +735,150 @@ void reformat(basic_node* tree,
 }
 
 
+class html_highlight_printer: public basic_visitor {
+public:
+  html_highlight_printer(std::ostream& stream,
+                         const std::vector<std::string>& white_spaces)
+    : stream(stream), white_spaces(white_spaces) {}
+
+  virtual ~html_highlight_printer() {}
+
+  virtual void visit(node& n) override {
+    if (n.get_production_id() == -1)
+      return;
+
+    switch (n.get_symbol()) {
+    case symbol::start:
+    case symbol::stmt_list:
+    case symbol::stmt:
+    case symbol::input:
+    case symbol::macro_call:
+    case symbol::macro_name:
+    case symbol::macro_arg_list:
+    case symbol::macro_arg:
+    case symbol::parent_expression:
+    case symbol::expression:
+    case symbol::term:
+    case symbol::factor:
+    case symbol::expression_list:
+    case symbol::parameter_list:
+    case symbol::function_call:
+    case symbol::macro_file:
+    case symbol::if_clause:
+    case symbol::macro_def:
+    case symbol::if_stmt:
+    case symbol::for_stmt:
+      for (auto child: n.get_children())
+        child->accept(this);
+      break;
+
+
+    default:
+      throw std::string("this should not happen: unhandled non terminal symbol");
+      break;
+    }
+  }
+
+  virtual void visit(leaf& l) override {
+    stream << white_spaces[l.get_id() - 1];
+
+    switch (l.get_symbol()) {
+    case symbol::at:
+    case symbol::if_kw:
+    case symbol::if_def_kw:
+    case symbol::then_kw:
+    case symbol::else_kw:
+    case symbol::endif_kw:
+    case symbol::for_kw:
+    case symbol::to_kw:
+    case symbol::step_kw:
+    case symbol::do_kw:
+    case symbol::enddo_kw:
+    case symbol::endmacro_kw:
+    case symbol::defmacro_kw:
+    case symbol::enddefmacro_kw:
+      stream << "<span class=\"alucell-keyword\">";
+      stream << l.get_value();
+      stream << "</span>";
+      break;
+      
+    case symbol::inline_macro_name:
+    case symbol::local_macro_name:
+      stream << "<span class=\"alucell-macro\">";
+      stream << l.get_value();
+      stream << "</span>";
+      break;
+      
+    case symbol::global_macro_name:
+      stream << "<a href=\"#\"><span class=\"alucell-macro\">";
+      stream << l.get_value();
+      stream << "</span></a>";
+      break;
+      
+    case symbol::comment:
+      stream << "<span class=\"alucell-comment\">";
+      stream << l.get_value();
+      stream << "</span>";
+      break;
+      
+    case symbol::visual_comment:
+      stream << "<span class=\"alucell-visual-comment\">";
+      stream << l.get_value();
+      stream << "</span>";
+      break;
+      
+    case symbol::shell_escape:
+      stream << "<span class=\"alucell-shell-escape\">";
+      stream << l.get_value();
+      stream << "</span>";
+      break;
+      
+    case symbol::fp_number:
+      stream << "<span class=\"alucell-number\">";
+      stream << l.get_value();
+      stream << "</span>";
+      break;
+      
+    case symbol::literal_string:
+      stream << "<span class=\"alucell-string\">";
+      stream << l.get_value();
+      stream << "</span>";
+      break;
+      
+    case symbol::identifier:
+    case symbol::plus:
+    case symbol::minus:
+    case symbol::mult:
+    case symbol::div:
+    case symbol::equal:
+    case symbol::percent:
+    case symbol::lp:
+    case symbol::rp:
+    case symbol::lb:
+    case symbol::rb:
+    case symbol::semicolon:
+    case symbol::comma:
+      stream << l.get_value();
+      break;
+
+    default:
+      throw std::string("this should not happen: unhandled terminal symbol");
+      break;
+    }
+  }
+
+private:
+  std::ostream& stream;
+  const std::vector<std::string>& white_spaces;
+};
+
+void html_highlight(basic_node* tree,
+                    const std::vector<std::string>& white_spaces,
+                    std::ostream& stream) {
+  html_highlight_printer printer(stream, white_spaces);
+  stream << "<pre><code>";
+  tree->accept(&printer);
+  stream << "</pre></code>";
+}
+
 #endif /* SYNTAX_CHECKERS_H */

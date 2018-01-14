@@ -159,6 +159,9 @@ void analyse_file(const std::string& file, options opt,
 	if (opt.reformat_source)
 	  reformat(tree, tokens.get_white_spaces(), std::cout);
 
+        if (opt.html_highlight)
+          html_highlight(tree, tokens.get_white_spaces(), std::cout);
+        
 	delete tree;
 	tree = nullptr;
       }
@@ -237,6 +240,9 @@ int main(int argc, char *argv[]) {
 	case 'g':
 	  opt.show_grammar = true;
 	  break;
+        case 'h':
+          opt.html_highlight = true;
+          break;
 	default:
 	  throw std::string("unrecognize option: ") + argv[i];
 	}

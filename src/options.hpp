@@ -11,6 +11,7 @@ struct options {
     verbose(false),
     silent(false),
     reformat_source(false),
+    html_highlight(false),
     recursive_parse(false) {
     const char* g_m_dir(std::getenv("ALUCELL_GLOBAL_MACRO_DIR"));
     if (g_m_dir)
@@ -33,6 +34,7 @@ struct options {
   bool verbose;
   bool silent;
   bool reformat_source;
+  bool html_highlight;
   bool recursive_parse;
 
   std::string global_macro_dir;
