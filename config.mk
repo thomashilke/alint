@@ -1,8 +1,8 @@
 CXX = clang++
 DEPS_BIN = clang++
-DEPSFLAGS =  -std=c++1y -I$(HOME)/.local/include 
-CXXFLAGS = -O3 -std=c++1y -Wall -Wextra -I$(HOME)/.local/include
-LDFLAGS = -O3 -L$(HOME)/.local/lib
+DEPSFLAGS =  -std=c++1y -Iexternal/lexer/include -Iexternal/spikes/include -Iexternal/parser/include 
+CXXFLAGS = -O3 -std=c++1y -Wall -Wextra -Iexternal/lexer/include -Iexternal/spikes/include -Iexternal/parser/include 
+LDFLAGS = -O3 -Lexternal/lexer/lib
 LDLIB = -llexer
 AR = ar
 ARFLAGS = rc

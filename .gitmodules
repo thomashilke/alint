@@ -1,0 +1,9 @@
+[submodule "external/lexer"]
+	path = external/lexer
+	url = https://github.com/thomashilke/lexer.git
+[submodule "external/spikes"]
+	path = external/spikes
+	url = https://github.com/thomashilke/spikes.git
+[submodule "external/parser"]
+	path = external/parser
+	url = https://github.com/thomashilke/parser.git
